@@ -38,7 +38,7 @@ type Group struct {
 var conn *pgx.Conn
 
 func main() {
-	url := "postgres:///university"
+	url := os.Getenv("DATABASE_URL")
 	var err error
 	conn, err = pgx.Connect(context.Background(), url)
 	if err != nil {
