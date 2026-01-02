@@ -9,3 +9,6 @@ main.exe
 
 # Environment variables (пароли и секреты)
 .env
+
+# Gemini
+GEMINI.md
