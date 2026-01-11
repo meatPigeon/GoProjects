@@ -25,3 +25,10 @@ type Group struct {
 	GroupID   int    `json:"group_id"`
 	GroupName string `json:"group_name"`
 }
+
+type VisitRecord struct {
+	StudentID int       `json:"student_id"`
+	ClassID   int       `json:"class_id"`
+	VisitDate time.Time `json:"visit_date"`
+	Present   bool      `json:"present"`
+}

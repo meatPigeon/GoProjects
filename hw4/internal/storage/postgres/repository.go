@@ -16,7 +16,7 @@ func NewRepository(conn *pgx.Conn) storage.Repository {
 	return &Repository{conn: conn}
 }
 
-func (r *Repository) GetStudent(ctx context.Context, id string) (*model.StudentResponse, error) {
+func (r *Repository) GetStudent(ctx context.Context, id int) (*model.StudentResponse, error) {
 	sql := `
 		SELECT 
 			s.student_id, 
@@ -42,12 +42,13 @@ func (r *Repository) GetStudent(ctx context.Context, id string) (*model.StudentR
 	return &s, nil
 }
 
-func (r *Repository) GetAllSchedules(ctx context.Context) ([]model.ClassSchedule, error) {
+func (r *Repository) GetAllSchedules(ctx context.Context, limit int, offset int) ([]model.ClassSchedule, error) {
 	sql := `
 		SELECT class_id, group_id, class_name, class_date, start_time, end_time, room, teacher_id 
 		FROM class_schedule
+		LIMIT $1 OFFSET $2
 	`
-	rows, err := r.conn.Query(ctx, sql)
+	rows, err := r.conn.Query(ctx, sql, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -105,4 +106,84 @@ func (r *Repository) GetGroupSchedule(ctx context.Context, groupID string) ([]mo
 		schedules = append(schedules, cs)
 	}
 	return schedules, nil
+}
+
+// Implement the following repository methods
+func (r *Repository) RecordVisit(ctx context.Context, vr model.VisitRecord) error {
+	// Implementation goes here
+	sql := `
+		INSERT INTO attendance (student_id, class_id, visit_date, present)
+		VALUES ($1, $2, $3, $4);
+	`
+	_, err := r.conn.Exec(ctx, sql,
+		vr.StudentID,
+		vr.ClassID,
+		vr.VisitDate,
+		vr.Present,
+	)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Repository) GetAttendanceByClass(ctx context.Context, classID int) ([]model.VisitRecord, error) {
+	// Implementation goes here
+	sql := `
+		SELECT student_id, class_id, visit_date, present
+		FROM attendance
+		WHERE class_id = $1;
+	`
+	rows, err := r.conn.Query(ctx, sql, classID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []model.VisitRecord
+	for rows.Next() {
+		var vr model.VisitRecord
+		err := rows.Scan(
+			&vr.StudentID,
+			&vr.ClassID,
+			&vr.VisitDate,
+			&vr.Present,
+		)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, vr)
+	}
+	return records, nil
+}
+
+func (r *Repository) GetAttendanceByStudent(ctx context.Context, studentID int) ([]model.VisitRecord, error) {
+	// Implementation goes here
+	sql := `
+		SELECT student_id, class_id, visit_date, present
+		FROM attendance
+		WHERE student_id = $1;
+	`
+	rows, err := r.conn.Query(ctx, sql, studentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []model.VisitRecord
+	for rows.Next() {
+		var vr model.VisitRecord
+		err := rows.Scan(
+			&vr.StudentID,
+			&vr.ClassID,
+			&vr.VisitDate,
+			&vr.Present,
+		)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, vr)
+	}
+	return records, nil
 }
